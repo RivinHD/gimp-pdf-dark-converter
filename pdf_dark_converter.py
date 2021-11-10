@@ -14,7 +14,28 @@ def convert_layers(image, drawable, linear, copy_layer):
             layer.name = "%s-Dark" %name
             image.add_layer(layer, 2 * i)
         pdb.gimp_image_set_active_layer(image, layer)
-        pdb.gimp_drawable_invert(layer, linear)
+        if linear:
+            pdb.gimp_drawable_invert(layer, linear)
+        else:
+            color = pdb.gimp_context_get_background()
+            if not pdb.gimp_drawable_has_alpha(layer):
+                pdb.gimp_layer_add_alpha(layer)
+            pdb.gimp_image_select_color(image, 2, layer, (0, 0, 0))
+            if not pdb.gimp_selection_is_empty(image):
+                pdb.gimp_drawable_edit_fill(layer, 3)
+            pdb.gimp_selection_none(image)
+            pdb.gimp_image_select_color(image, 2, layer, (255, 255, 255))
+            if not pdb.gimp_selection_is_empty(image):
+                pdb.gimp_context_set_background((0, 0, 0))
+                pdb.gimp_drawable_edit_fill(layer, 1)
+            pdb.gimp_image_select_color(image, 2, layer, (0, 0, 0))
+            pdb.gimp_image_select_item(image, 2, layer)
+            pdb.gimp_selection_invert(image)
+            if not pdb.gimp_selection_is_empty(image):
+                pdb.gimp_context_set_background((255, 255, 255))
+                pdb.gimp_drawable_edit_fill(layer, 1)
+            pdb.gimp_selection_none(image)
+            pdb.gimp_context_set_background(color)
         pdb.gimp_image_select_color(image, 2, layer, (0,0,0))
         if not pdb.gimp_selection_is_empty(image):
             pdb.gimp_drawable_edit_fill(layer, 0)
@@ -70,10 +91,9 @@ def stack_layer(image, drawable):
         layer.set_offsets(0, pos_y - height)
         pos_y -= height
         height = layer.height
+    pdb.gimp_image_resize_to_layers(image) 
 
     pdb.gimp_image_undo_group_end(image)
-
-    pdb.gimp_image_resize_to_layers(image) 
 
 register(
     "pdf-dark-convert-linear",
